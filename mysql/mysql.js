@@ -1,29 +1,22 @@
 const mysql = require('mysql');
 const Config = require('../common/config');
 
-class MySql {
-    #pool
+const pool = mysql.createPool(Config.MySql);
 
-    constructor() {
-        this.#pool = mysql.createPool(Config.MySql);
-    }
-
-    query(sql) {
-        this.#pool.getConnection(function (err, conn) {
+async function query(sql) {
+    return new Promise((resolve, reject) => {
+        pool.getConnection(function (err, conn) {
             if (err) {
-                console.log(err);
+                resolve();
                 return;
             } else {
                 conn.query(sql, function (err, rows) {
                     conn.release();
-                    if (err) {
-                        console.log(err);
-                        return;
-                    }
+                    resolve(rows);
                 });
             }
         });
-    }
+    })
 }
 
-module.exports = new MySql();
+module.exports = { query };
