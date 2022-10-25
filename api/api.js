@@ -1,11 +1,18 @@
 const md5 = require('md5');
 const jwt = require('jsonwebtoken')
 const Status = require('../common/status');
+const Logger = require('../logger/logger');
 
 class Api {
     #jwtKey = md5('vet-platform')
 
-    send(res, result) {
+    send(req, res, result) {
+        const log = `Result:${JSON.stringify(result)} | Body:${JSON.stringify(req.body) }`;
+        if (result.status == Status.Success) {
+            Logger.info(log);
+        } else {
+            Logger.error(log);
+        }
         res.send(JSON.stringify(result));
     }
 

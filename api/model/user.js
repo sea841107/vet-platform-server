@@ -1,6 +1,7 @@
 const Status = require('../../common/status');
 const Api = require('../api');
 const MySql = require('../../mysql/mysql');
+const Logger = require('../../logger/logger');
 
 class User extends Api {
     constructor(app) {
@@ -13,32 +14,32 @@ class User extends Api {
     async #register(req, res) {
         const status = this.#registerCheck(req);
         if (status != Status.Success) {
-            return this.send(res, { status });
+            return this.send(req, res, { status });
         }
 
         const sql = `INSERT INTO user (user_id, password) VALUES ('${req.body.userId}', '${req.body.password}')`;
         const rows = await MySql.query(sql);
         if (!rows) {
-            return this.send(res, { status: Status.Register_Fail });
+            return this.send(req, res, { status: Status.Register_Fail });
         }
 
-        this.send(res, { status });
+        this.send(req, res, { status });
     }
 
     async #login(req, res) {
         const status = this.#loginCheck(req);
         if (status != Status.Success) {
-            return this.send(res, { status });
+            return this.send(req, res, { status });
         }
 
         const sql = `SELECT password from user WHERE user_id = '${req.body.userId}'`;
         const rows = await MySql.query(sql, Status.Login_Fail);
         if (!rows) {
-            return this.send(res, { status: Status.Login_Fail });
+            return this.send(req, res, { status: Status.Login_Fail });
         }
 
         if (rows[0].password != req.body.password) {
-            return this.send(res, { status: Status.Login_Password_Incorrect });
+            return this.send(req, res, { status: Status.Login_Password_Incorrect });
         }
 
         const token = this.generateToken(req.body);
@@ -46,15 +47,15 @@ class User extends Api {
             status: Status.Success,
             token: token
         }
-        this.send(res, result);
+        this.send(req, res, result);
     }
 
     #testToken(req, res) {
         if (!this.verifyToken(req.header('Authorization'))) {
-            return this.send(res, { status: Status.Token_Invalid });
+            return this.send(req, res, { status: Status.Token_Invalid });
         }
 
-        this.send(res, { status: Status.Success });
+        this.send(req, res, { status: Status.Success });
     }
 
     #registerCheck(req) {
