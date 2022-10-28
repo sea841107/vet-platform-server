@@ -27,7 +27,14 @@ class User extends Api {
             return this.send(req, res, { status: Status.Register_Fail });
         }
 
-        this.send(req, res, { status });
+        const result = {
+            status: Status.Success,
+            data: {
+                userId: req.body.userId,
+                password: req.body.password
+            }
+        }
+        this.send(req, res, result);
     }
 
     async #frontRegister(req, res) {
@@ -57,7 +64,9 @@ class User extends Api {
         const token = this.generateToken(req.body);
         const result = {
             status: Status.Success,
-            token: token
+            data: {
+                token
+            }
         }
         this.send(req, res, result);
     }

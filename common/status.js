@@ -1,19 +1,19 @@
 module.exports = {
-    Success: 0,
-    Invalid: 1,
-    Fail: 2,
+    Success: { code: 0, message: '成功' },
+    Invalid: { code: 1, message: '無效' },
+    Fail: { code: 2, message: '失敗' },
 
     // Token
-    Token_Invalid: 1000,
+    Token_Invalid: { code: 1000, message: 'token無效' },
     
     // Register
-    Register_Fail: 2000,
-    Register_UserId_Invalid: 2001,
-    Register_Password_Invalid: 2002,
+    Register_Fail: { code: 2000, message: '註冊失敗' },
+    Register_UserId_Invalid: { code: 2001, message: '帳號無效' },
+    Register_Password_Invalid: { code: 2002, message: '密碼無效' },
 
     // Login
-    Login_Fail: 3000,
-    Login_UserId_Invalid: 3001,
-    Login_Password_Invalid: 3002,
-    Login_Password_Incorrect: 3003,
+    Login_Fail: { code: 3000, message: '登入失敗' },
+    Login_UserId_Invalid: { code: 3001, message: '帳號無效' },
+    Login_Password_Invalid: { code: 3002, message: '密碼無效' },
+    Login_Password_Incorrect: { code: 3003, message: '密碼有誤' },
 }
