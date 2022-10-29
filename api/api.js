@@ -29,14 +29,13 @@ class Api {
 
     verifyToken(authorization) {
         // jwt驗證若失敗，會直接報錯，所以外層包一個try catch
+        let data;
         try {
             const token = authorization.replace('Bearer ', '');
-            jwt.verify(token, this.#jwtKey);
-        } catch (e) {
-            return false
-        }
+            data = jwt.verify(token, this.#jwtKey);
+        } catch (e) {}
         
-        return true;
+        return data;
     }
 }
 

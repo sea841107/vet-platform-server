@@ -12,7 +12,8 @@ class User extends Api {
         app.post('/user/front/login', this.#frontLogin.bind(this));
         app.post('/user/back/register', this.#backRegister.bind(this));
         app.post('/user/back/login', this.#backLogin.bind(this));
-        app.post('/user/testToken', this.#testToken.bind(this));
+
+        app.get('/user/front/member', this.#frontMember.bind(this));
     }
 
     async #register(req, res, table) {
@@ -71,20 +72,27 @@ class User extends Api {
         this.send(req, res, result);
     }
 
+    #frontMember(req, res) {
+        const memberData = this.verifyToken(req.header('Authorization'));
+        if (!memberData) {
+            return this.send(req, res, { status: Status.Token_Invalid });
+        }
+
+        const result = {
+            status: Status.Success,
+            data: {
+                userId: memberData.userId
+            }
+        }
+        this.send(req, res, result);
+    }
+
     #frontLogin(req, res) {
         this.#login(req, res, this.#frontTable);
     }
 
     #backLogin(req, res) {
         this.#login(req, res, this.#backTable);
-    }
-
-    #testToken(req, res) {
-        if (!this.verifyToken(req.header('Authorization'))) {
-            return this.send(req, res, { status: Status.Token_Invalid });
-        }
-
-        this.send(req, res, { status: Status.Success });
     }
 
     #registerCheck(req) {
