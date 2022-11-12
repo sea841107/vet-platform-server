@@ -7,6 +7,7 @@ class Api {
     #jwtKey = md5('vet-platform')
 
     send(req, res, result) {
+        res.setHeader('Content-Type', 'application/json')
         const log = `Result:${JSON.stringify(result)} | Body:${JSON.stringify(req.body) }`;
         if (result.status == Status.Success) {
             Logger.info(log);
