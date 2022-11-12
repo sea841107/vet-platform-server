@@ -96,10 +96,10 @@ class User extends Api {
     }
 
     #registerCheck(req) {
-        if (!req.body.userId) {
+        if (!req.body.hasOwnProperty('userId')) {
             return Status.Login_UserId_Invalid;
         }
-        if (!req.body.password) {
+        if (!req.body.hasOwnProperty('password')) {
             return Status.Login_Password_Invalid;
         }
 
@@ -107,10 +107,10 @@ class User extends Api {
     }
 
     #loginCheck(req) {
-        if (!req.body.userId) {
+        if (!req.body.hasOwnProperty('userId')) {
             return Status.Login_UserId_Invalid;
         }
-        if (!req.body.password) {
+        if (!req.body.hasOwnProperty('password')) {
             return Status.Login_Password_Invalid;
         }
 

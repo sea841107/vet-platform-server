@@ -16,4 +16,8 @@ module.exports = {
     Login_UserId_Invalid: { code: 3001, message: '帳號無效' },
     Login_Password_Invalid: { code: 3002, message: '密碼無效' },
     Login_Password_Incorrect: { code: 3003, message: '密碼有誤' },
+
+    // Search
+    Search_Fail: { code: 4000, message: '搜尋失敗' },
+    Search_Type_Invalid: { code: 4001, message: '類型無效' }
 }
