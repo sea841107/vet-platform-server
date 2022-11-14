@@ -2,27 +2,27 @@ const Status = require('../../common/status');
 const Api = require('../api');
 const MySql = require('../../mysql/mysql');
 
-class User extends Api {
+class User extends Api.ApiModel {
     #frontTable = 'front_user'
     #backTable = 'back_user'
 
     constructor(app) {
         super();
-        app.post('/user/front/register', this.#frontRegister.bind(this));
-        app.post('/user/front/login', this.#frontLogin.bind(this));
-        app.post('/user/back/register', this.#backRegister.bind(this));
-        app.post('/user/back/login', this.#backLogin.bind(this));
+        this.registerApi(app, 'post', '/user/front/register', this.#frontRegister.bind(this), true);
+        this.registerApi(app, 'post', '/user/front/login', this.#frontLogin.bind(this), true);
+        this.registerApi(app, 'post', '/user/back/login', this.#backLogin.bind(this), true);
 
-        app.get('/user/front/member', this.#frontMember.bind(this));
+        this.registerApi(app, 'get', '/user/front/member', this.#frontMember.bind(this));
     }
 
-    async #register(req, res, table) {
+    /** 前台註冊 */
+    async #frontRegister(req, res) {
         const status = this.#registerCheck(req);
         if (status != Status.Success) {
             return this.send(req, res, { status });
         }
 
-        const sql = `INSERT INTO ${table} (user_id, password) VALUES ('${req.body.userId}', '${req.body.password}')`;
+        const sql = `INSERT INTO ${this.#frontTable} (user_id, password) VALUES ('${req.body.userId}', '${req.body.password}')`;
         const rows = await MySql.query(sql);
         if (!rows) {
             return this.send(req, res, { status: Status.Register_Fail });
@@ -36,14 +36,6 @@ class User extends Api {
             }
         }
         this.send(req, res, result);
-    }
-
-    async #frontRegister(req, res) {
-        this.#register(req, res, this.#frontTable);
-    }
-
-    async #backRegister(req, res) {
-        this.#register(req, res, this.#backTable);
     }
 
     async #login(req, res, table) {
@@ -72,12 +64,8 @@ class User extends Api {
         this.send(req, res, result);
     }
 
+    /** 前台會員 */
     #frontMember(req, res) {
-        const memberData = this.verifyToken(req.header('Authorization'));
-        if (!memberData) {
-            return this.send(req, res, { status: Status.Token_Invalid });
-        }
-
         const result = {
             status: Status.Success,
             data: {
@@ -87,10 +75,12 @@ class User extends Api {
         this.send(req, res, result);
     }
 
+    /** 前台登入 */
     #frontLogin(req, res) {
         this.#login(req, res, this.#frontTable);
     }
 
+    /** 後台註冊 */
     #backLogin(req, res) {
         this.#login(req, res, this.#backTable);
     }

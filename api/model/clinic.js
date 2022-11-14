@@ -2,20 +2,17 @@ const Status = require('../../common/status');
 const Api = require('../api');
 const MySql = require('../../mysql/mysql');
 
-class Clinic extends Api {
+class Clinic extends Api.ApiModel {
     #statusClose = 0
     #statusOpen = 1
 
     constructor(app) {
         super();
-        app.post('/clinic/search', this.#search.bind(this));
+        this.registerApi(app, 'post', '/clinic/search', this.#search.bind(this));
     }
 
+    /** 診所搜尋 */
     async #search(req, res) {
-        if (!this.verifyToken(req.header('Authorization'))) {
-            return this.send(req, res, { status: Status.Token_Invalid });
-        }
-
         const status = this.#searchCheck(req);
         if (status != Status.Success) {
             return this.send(req, res, { status });
@@ -51,12 +48,8 @@ class Clinic extends Api {
                 title: row['name'],
                 clinicPicture: row['picture'],
                 address: row['address'],
-                minPrice: 1,
-                maxPrice: 100,
                 experts: row['experts'].split(','),
                 tags: row['tags'].split(','),
-                commentCount: 123,
-                rate: 5,
                 remark: row['remark'],
                 doctorPictures: row['doctor_pictures'].split(',')
             }
