@@ -18,4 +18,8 @@ module.exports = {
 
     // Search
     Search_Fail: { code: 3000, message: '搜尋失敗' },
+
+    // Doctor
+    Doctor_List_Fail: { code: 4000, message: '醫生列表失敗' },
+    Doctor_List_ClinicId_Invalid: { code: 4001, message: '診所ID無效' },
 }

@@ -22,7 +22,8 @@ function init(app) {
 function createMiddleware(app) {
     app.use((req, res, next) => {
         // token處理
-        if (ignoreTokenList.indexOf(req.url) == -1 && !verifyToken(req.header('Authorization'))) {
+        const user = verifyToken(req.header('Authorization'));
+        if (ignoreTokenList.indexOf(req.url) == -1 && !user) {
             return send(req, res, { status: Status.Token_Invalid });
         }
 
@@ -30,6 +31,8 @@ function createMiddleware(app) {
         if (ignorePermissionList.indexOf(req.url) == -1 && !verifyPermission()) {
             return send(req, res, { status: Status.No_Permission });
         }
+
+        res.locals.user = user;
 
         next()
     })

@@ -69,7 +69,7 @@ class User extends Api.ApiModel {
         const result = {
             status: Status.Success,
             data: {
-                userId: memberData.userId
+                userId: res.locals.user.userId
             }
         }
         this.send(req, res, result);

@@ -45,6 +45,7 @@ class Clinic extends Api.ApiModel {
         const dataList = [];
         rows.forEach(row => {
             const data = {
+                id: row['id'],
                 title: row['name'],
                 clinicPicture: row['picture'],
                 address: row['address'],
