@@ -4,6 +4,7 @@ module.exports = {
     Fail: { code: 2, message: '失敗' },
     Token_Invalid: { code: 3, message: 'token無效' },
     No_Permission: { code: 4, message: '無權限' },
+    Parameter_Error: { code: 5, message: '請求參數有誤' },
     
     // Register
     Register_Fail: { code: 1000, message: '註冊失敗' },
@@ -21,5 +22,11 @@ module.exports = {
 
     // Doctor
     Doctor_List_Fail: { code: 4000, message: '醫生列表失敗' },
-    Doctor_List_ClinicId_Invalid: { code: 4001, message: '診所ID無效' },
+
+    // Reservation
+    Reservation_Reserve_Fail: { code: 5000, message: '預約失敗' },
+    Reservation_Reserve_Full: { code: 5001, message: '該時段預約人數已滿' },
+
+    Reservation_GetClinicForm_Fail: { code: 5002, message: '獲取門診表失敗' },
+    Reservation_GetAvalibleTime_Fail: { code: 5003, message: '獲取可營業的時間失敗' },
 }
