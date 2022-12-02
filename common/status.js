@@ -17,16 +17,16 @@ module.exports = {
     Login_Password_Invalid: { code: 2002, message: '密碼無效' },
     Login_Password_Incorrect: { code: 2003, message: '密碼有誤' },
 
-    // Search
-    Search_Fail: { code: 3000, message: '搜尋失敗' },
+    // Clinic
+    Clinic_Search_Fail: { code: 3000, message: '診所搜尋失敗' },
+    Clinic_GetForm_Fail: { code: 3001, message: '獲取門診表失敗' },
 
     // Doctor
-    Doctor_List_Fail: { code: 4000, message: '醫生列表失敗' },
+    Doctor_List_Fail: { code: 4000, message: '獲取醫生列表失敗' },
 
     // Reservation
     Reservation_Reserve_Fail: { code: 5000, message: '預約失敗' },
     Reservation_Reserve_Full: { code: 5001, message: '該時段預約人數已滿' },
-
     Reservation_GetClinicForm_Fail: { code: 5002, message: '獲取門診表失敗' },
-    Reservation_GetAvalibleTime_Fail: { code: 5003, message: '獲取可營業的時間失敗' },
+    Reservation_GetAvalibleTime_Fail: { code: 5003, message: '獲取可預約的時間失敗' },
 }

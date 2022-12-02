@@ -9,6 +9,7 @@ class Clinic extends Api.ApiModel {
     constructor(app) {
         super();
         this.registerApi(app, 'post', '/clinic/search', this.#search.bind(this));
+        this.registerApi(app, 'post', '/clinic/getForm', this.#getForm.bind(this));
     }
 
     /** 診所搜尋 */
@@ -39,7 +40,7 @@ class Clinic extends Api.ApiModel {
 
         const rows = await MySql.query(sql);
         if (!rows) {
-            return this.send(req, res, { status: Status.Search_Fail });
+            return this.send(req, res, { status: Status.Clinic_Search_Fail });
         }
 
         const dataList = [];
@@ -65,7 +66,67 @@ class Clinic extends Api.ApiModel {
         this.send(req, res, result);
     }
 
+    /** 獲取門診表 */
+    async #getForm(req, res) {
+        const status = this.#getFormCheck(req);
+        if (status != Status.Success) {
+            return this.send(req, res, { status });
+        }
+
+        let sql = `SELECT *, DATE_FORMAT(date, '%Y-%m-%d') date from clinic_form c
+                LEFT JOIN doctor d ON c.clinic_id = d.clinic_id AND c.doctor_id = d.id
+                WHERE c.clinic_id = ${req.body.clinicId}`;
+
+        // 城市
+        if (req.body.doctorId) {
+            sql += ` AND doctor_id = ${req.body.doctorId}`;
+        }
+
+        // 開始、結束日期
+        sql += ` AND date >= '${req.body.startDate}' AND date <= '${req.body.endDate}'`;
+
+        const rows = await MySql.query(sql);
+        if (!rows) {
+            return this.send(req, res, { status: Status.Clinic_GetForm_Fail });
+        }
+
+        const dataObj = {};
+        rows.forEach(row => {
+            if (!dataObj.hasOwnProperty(row['date'])) {
+                dataObj[row['date'].toString()] = {
+                    'morning': [],
+                    'afternoon': [],
+                    'evening': [],
+                };
+            }
+
+            const data = {
+                id: row['doctor_id'],
+                name: row['name'],
+                startTime: row['start_time'],
+                endTime: row['end_time'],
+            }
+            dataObj[row['date']][row['period']].push(data);
+        });
+
+        const result = {
+            status: Status.Success,
+            data: dataObj
+        }
+        this.send(req, res, result);
+    }
+
     #searchCheck(req) {
+        return Status.Success;
+    }
+
+    #getFormCheck(req) {
+        if (!req.body.hasOwnProperty('clinicId')
+            || !req.body.hasOwnProperty('startDate')
+            || !req.body.hasOwnProperty('endDate')) {
+            return Status.Parameter_Error;
+        }
+
         return Status.Success;
     }
 }
