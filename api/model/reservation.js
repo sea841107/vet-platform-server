@@ -87,9 +87,9 @@ class Reservation extends Api.ApiModel {
 
         const remark = req.body.remark || '';
         const addTime = Common.nowTime();
-        const uniqueId = `${req.body.userId}${req.body.clinicId}${req.body.doctorId}${reserveTime}`;
+        const uniqueId = `${res.locals.user.id}${req.body.clinicId}${req.body.doctorId}${reserveTime}`;
         const insertSql = `INSERT INTO reservation_list (user_id, clinic_id, doctor_id, unique_id, reserve_time, add_time, remark)
-                VALUES(${req.body.userId}, ${req.body.clinicId}, ${req.body.doctorId}, '${uniqueId}', ${reserveTime}, ${addTime}, '${remark}')`;
+                VALUES(${res.locals.user.id}, ${req.body.clinicId}, ${req.body.doctorId}, '${uniqueId}', ${reserveTime}, ${addTime}, '${remark}')`;
 
         const insertRows = await MySql.query(insertSql);
         if (!insertRows) {

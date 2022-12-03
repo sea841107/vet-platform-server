@@ -8,12 +8,12 @@ module.exports = {
     
     // Register
     Register_Fail: { code: 1000, message: '註冊失敗' },
-    Register_UserId_Invalid: { code: 1001, message: '帳號無效' },
+    Register_Account_Invalid: { code: 1001, message: '帳號無效' },
     Register_Password_Invalid: { code: 1002, message: '密碼無效' },
 
     // Login
     Login_Fail: { code: 2000, message: '登入失敗' },
-    Login_UserId_Invalid: { code: 2001, message: '帳號無效' },
+    Login_Account_Invalid: { code: 2001, message: '帳號無效' },
     Login_Password_Invalid: { code: 2002, message: '密碼無效' },
     Login_Password_Incorrect: { code: 2003, message: '密碼有誤' },
 

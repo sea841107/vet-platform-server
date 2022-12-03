@@ -22,7 +22,7 @@ class User extends Api.ApiModel {
             return this.send(req, res, { status });
         }
 
-        const sql = `INSERT INTO ${this.#frontTable} (user_id, password) VALUES ('${req.body.userId}', '${req.body.password}')`;
+        const sql = `INSERT INTO ${this.#frontTable} (account, password) VALUES ('${req.body.account}', '${req.body.password}')`;
         const rows = await MySql.query(sql);
         if (!rows) {
             return this.send(req, res, { status: Status.Register_Fail });
@@ -31,7 +31,7 @@ class User extends Api.ApiModel {
         const result = {
             status: Status.Success,
             data: {
-                userId: req.body.userId,
+                account: req.body.account,
                 password: req.body.password
             }
         }
@@ -44,7 +44,7 @@ class User extends Api.ApiModel {
             return this.send(req, res, { status });
         }
 
-        const sql = `SELECT password from ${table} WHERE user_id = '${req.body.userId}'`;
+        const sql = `SELECT * from ${table} WHERE account = '${req.body.account}'`;
         const rows = await MySql.query(sql, Status.Login_Fail);
         if (!rows || rows.length == 0) {
             return this.send(req, res, { status: Status.Login_Fail });
@@ -54,7 +54,11 @@ class User extends Api.ApiModel {
             return this.send(req, res, { status: Status.Login_Password_Incorrect });
         }
 
-        const token = this.generateToken(req.body);
+        const tokenData = {
+            id: rows[0].id,
+            account: rows[0].account
+        }
+        const token = this.generateToken(tokenData);
         const result = {
             status: Status.Success,
             data: {
@@ -69,7 +73,7 @@ class User extends Api.ApiModel {
         const result = {
             status: Status.Success,
             data: {
-                userId: res.locals.user.userId
+                account: res.locals.user.account
             }
         }
         this.send(req, res, result);
@@ -86,8 +90,8 @@ class User extends Api.ApiModel {
     }
 
     #registerCheck(req) {
-        if (!req.body.hasOwnProperty('userId')) {
-            return Status.Login_UserId_Invalid;
+        if (!req.body.hasOwnProperty('account')) {
+            return Status.Login_Account_Invalid;
         }
         if (!req.body.hasOwnProperty('password')) {
             return Status.Login_Password_Invalid;
@@ -97,8 +101,8 @@ class User extends Api.ApiModel {
     }
 
     #loginCheck(req) {
-        if (!req.body.hasOwnProperty('userId')) {
-            return Status.Login_UserId_Invalid;
+        if (!req.body.hasOwnProperty('account')) {
+            return Status.Login_Account_Invalid;
         }
         if (!req.body.hasOwnProperty('password')) {
             return Status.Login_Password_Invalid;
