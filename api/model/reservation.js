@@ -1,3 +1,5 @@
+const request = require('request');
+
 const Status = require('../../common/status');
 const Common = require('../../common/common');
 const Api = require('../api');
@@ -5,6 +7,7 @@ const MySql = require('../../mysql/mysql');
 
 class Reservation extends Api.ApiModel {
     #maxNumPerTime = 2 // 每個時段最大預約人數
+    #timeOffset = 30 // 預約時間間隔
 
     constructor(app) {
         super();
@@ -18,48 +21,33 @@ class Reservation extends Api.ApiModel {
         if (status != Status.Success) {
             return this.send(req, res, { status });
         }
+
+        // 時間範圍
+        const startTime = Common.nowTime();
+        const endTime = startTime + Common.oneMonth;
         
-        const clinicForm = await this.#getClinicForm(req.body.clinicId);
+        const clinicForm = await this.#getClinicForm(req.body.clinicId, req.body.doctorId, startTime, endTime, req.header('Authorization'));
         if (!clinicForm) {
             return this.send(req, res, { status: Status.Reservation_GetClinicForm_Fail });
         }
 
-        // 時間範圍
-        const startTime = Common.nowTime();
-        const endTime = nowTime + Common.oneMonth ;
+        const timeForm = this.#createTimeForm(clinicForm);
 
-        let sql = `SELECT * FROM reservation_list WHERE clinic_id = ${req.body.clinicId} AND `;
+        let sql = `SELECT DISTINCT(reserve_time) FROM reservation_list WHERE clinic_id = ${req.body.clinicId}`;
 
         // 醫生ID
         if (req.body.doctorId) {
-            sql += ` AND doctorId = '${req.body.doctorId}'`;
+            sql += ` AND doctor_id = '${req.body.doctorId}'`;
         }
-        sql += ' GROUP BY date';
+        sql += ` AND reserve_time >= ${startTime} AND reserve_time <= ${endTime}`;
 
         const rows = await MySql.query(sql);
         if (!rows) {
             return this.send(req, res, { status: Status.Reservation_GetAvalibleTime_Fail });
         }
 
-        const dataList = [];
-        rows.forEach(row => {
-            const data = {
-                id: row['id'],
-                title: row['name'],
-                clinicPicture: row['picture'],
-                address: row['address'],
-                experts: row['experts'].split(','),
-                tags: row['tags'].split(','),
-                remark: row['remark'],
-                doctorPictures: row['doctor_pictures'].split(',')
-            }
-
-            dataList.push(data);
-        });
-
         const result = {
             status: Status.Success,
-            data: dataList
         }
         this.send(req, res, result);
     }
@@ -103,33 +91,90 @@ class Reservation extends Api.ApiModel {
     }
 
     /** 獲取門診表 */
-    async #getClinicForm(clinicId, doctorId) {
-        let sql = `SELECT business_time from clinic_form WHERE clinic_id = ${clinicId}`;
-        if (doctorId) {
-            sql += ` AND doctor_id = ${doctorId}`;
-        }
-        const rows = await MySql.query(sql);
-        if (!rows || rows.length == 0) {
-            return null;
-        }
+    async #getClinicForm(clinicId, doctorId, startTime, endTime, token) {
+        const startDate = Common.formatTime(startTime).split('T')[0];
+        const endDate = Common.formatTime(endTime).split('T')[0];
+        let options = {
+            url: Common.apiDomain + '/clinic/getForm',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': token
+            },
+            body: JSON.stringify({
+                clinicId, doctorId, startDate,endDate
+            }),
+        };
 
-        return rows;
+        return await new Promise((resolve, reject) => {
+            request.post(options, (error, response, body) => {
+                if (error || !body) {
+                    reject();
+                    return;
+                }
+
+                const result = Common.parseJson(body);
+                if (result['data']) {
+                    resolve(result['data'])
+                } else {
+                    resolve();
+                }
+            })
+        });
     }
 
     /** 生成時間表 */
-    async #createTimeForm(startTime, endTime) {
+    async #createTimeForm(form) {
         const timeForm = {};
-        
-        let sql = `SELECT business_time from clinic_form WHERE clinic_id = ${clinicId}`;
-        if (doctorId) {
-            sql += ` AND doctor_id = ${doctorId}`;
-        }
-        const rows = await MySql.query(sql);
-        if (!rows || rows.length == 0) {
-            return null;
+        Object.keys(form).forEach((date) => {
+            if (!timeForm.hasOwnProperty(date)) {
+                timeForm[date] = {};
+            }
+            Object.values(form[date]).forEach((list) => {
+                list.forEach(data => {
+                    for (let i = parseInt(data['startTime']);; i += this.#timeOffset) {
+                        const time = this.#numToTime(i);
+                        if (time >= data['endTime']) {
+                            break;
+                        }
+
+                        i = parseInt(time);
+
+                        if (!timeForm[date].hasOwnProperty(time)) {
+                            timeForm[date][time] = {
+                                id: data['id'],
+                                name: data['name']
+                            }
+                        }
+                    }
+                });
+            })
+        });
+
+        return timeForm;
+    }
+
+    /** 數字轉成時間 */
+    #numToTime(num) {
+        let hour = Math.floor(num / 100);
+        let minute = num % 100;
+        if (minute >= 60) {
+            hour += 1;
+            minute -= 60;
         }
 
-        return rows;
+        let time;
+        if (hour < 10) {
+            time = `0${hour}`;
+        } else {
+            time = `${hour}`;
+        }
+        if (minute < 10) {
+            time = `${time}0${minute}`;
+        } else {
+            time = `${time}${minute}`;
+        }
+
+        return time;
     }
 
     #getAvalibleTimeCheck(req) {
