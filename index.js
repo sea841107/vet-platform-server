@@ -1,4 +1,5 @@
 const express = require('express');
+const cors = require('cors');
 const Config = require('./common/config');
 const Logger = require('./logger/logger');
 const Api = require('./api/api');
@@ -6,6 +7,7 @@ const Api = require('./api/api');
 const port = normalizePort(process.env.PORT || Config.Server.Port);
 const app = express();
 app.use(express.json());
+app.use(cors());
 app.listen(port, () => {
     Logger.info(`Api Server Start at ${port}`);
 });
