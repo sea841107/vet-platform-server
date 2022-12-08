@@ -90,10 +90,10 @@ class Clinic extends Api.ApiModel {
             return this.send(req, res, { status: Status.Clinic_GetForm_Fail });
         }
 
-        const dataObj = {};
+        let dataObj = {};
         rows.forEach(row => {
             if (!dataObj.hasOwnProperty(row['date'])) {
-                dataObj[row['date'].toString()] = {
+                dataObj[row['date']] = {
                     'morning': [],
                     'afternoon': [],
                     'evening': [],
@@ -108,6 +108,12 @@ class Clinic extends Api.ApiModel {
             }
             dataObj[row['date']][row['period']].push(data);
         });
+
+        // 排序時間
+        dataObj = Object.keys(dataObj).sort().reduce((accumulator, key) => {
+            accumulator[key] = dataObj[key];
+            return accumulator;
+        }, {});
 
         const result = {
             status: Status.Success,

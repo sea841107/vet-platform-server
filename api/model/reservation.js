@@ -1,5 +1,3 @@
-const request = require('request');
-
 const Status = require('../../common/status');
 const Common = require('../../common/common');
 const Api = require('../api');
@@ -25,29 +23,44 @@ class Reservation extends Api.ApiModel {
         // 時間範圍
         const startTime = Common.nowTime();
         const endTime = startTime + Common.oneMonth;
+        const startDate = Common.formatTime(startTime).split('T')[0];
+        const endDate = Common.formatTime(endTime).split('T')[0];
         
-        const clinicForm = await this.#getClinicForm(req.body.clinicId, req.body.doctorId, startTime, endTime, req.header('Authorization'));
+        const clinicForm = await this.getClinicForm(req.header('Authorization'), req.body.clinicId, req.body.doctorId, startDate, endDate);
         if (!clinicForm) {
             return this.send(req, res, { status: Status.Reservation_GetClinicForm_Fail });
         }
 
         const timeForm = this.#createTimeForm(clinicForm);
 
-        let sql = `SELECT DISTINCT(reserve_time) FROM reservation_list WHERE clinic_id = ${req.body.clinicId}`;
+        let sql = `SELECT reserve_time, COUNT(reserve_time) count FROM reservation_list WHERE clinic_id = ${req.body.clinicId}`;
 
         // 醫生ID
         if (req.body.doctorId) {
-            sql += ` AND doctor_id = '${req.body.doctorId}'`;
+            sql += ` AND doctor_id = ${req.body.doctorId}`;
         }
-        sql += ` AND reserve_time >= ${startTime} AND reserve_time <= ${endTime}`;
+        sql += ` AND reserve_time >= '${startDate}' AND reserve_time <= '${endDate}'`;
+        sql += ` GROUP BY reserve_time`;
 
         const rows = await MySql.query(sql);
         if (!rows) {
             return this.send(req, res, { status: Status.Reservation_GetAvalibleTime_Fail });
         }
 
+        rows.forEach(row => {
+            const splitTime = row['reserve_time'].split(' ');
+            const date = splitTime[0];
+            const time = splitTime[1].replace(':', '');
+            if (timeForm.hasOwnProperty(date)) {
+                if (timeForm[date].hasOwnProperty(time) && row['count'] >= this.#maxNumPerTime) {
+                    delete timeForm[date][time];
+                }
+            }
+        });
+
         const result = {
             status: Status.Success,
+            data: timeForm
         }
         this.send(req, res, result);
     }
@@ -59,9 +72,8 @@ class Reservation extends Api.ApiModel {
             return this.send(req, res, { status });
         }
 
-        const reserveTime = Math.floor(new Date(`${req.body.reserveTime}${Common.timeZone}`).getTime() / 1000);
         const selectSql = `SELECT COUNT(*) as count FROM reservation_list WHERE clinic_id = ${req.body.clinicId}
-                AND doctor_id = ${req.body.doctorId} AND reserve_time = ${reserveTime}`;
+                AND doctor_id = ${req.body.doctorId} AND reserve_time = '${req.body.reserveTime}'`;
 
         const selectRows = await MySql.query(selectSql);
         if (!selectRows) {
@@ -74,10 +86,11 @@ class Reservation extends Api.ApiModel {
         }
 
         const remark = req.body.remark || '';
-        const addTime = Common.nowTime();
-        const uniqueId = `${res.locals.user.id}${req.body.clinicId}${req.body.doctorId}${reserveTime}`;
+        const addTime = Common.formatTime(Common.nowTime()).split('.')[0].replace('T', ' ');
+        const reserveTimestamp = Math.floor(new Date(`${req.body.reserveTime}${Common.timeZone}`).getTime() / 1000);
+        const uniqueId = `${res.locals.user.id}${req.body.clinicId}${req.body.doctorId}${reserveTimestamp}`;
         const insertSql = `INSERT INTO reservation_list (user_id, clinic_id, doctor_id, unique_id, reserve_time, add_time, remark)
-                VALUES(${res.locals.user.id}, ${req.body.clinicId}, ${req.body.doctorId}, '${uniqueId}', ${reserveTime}, ${addTime}, '${remark}')`;
+                VALUES(${res.locals.user.id}, ${req.body.clinicId}, ${req.body.doctorId}, '${uniqueId}', '${req.body.reserveTime}', '${addTime}', '${remark}')`;
 
         const insertRows = await MySql.query(insertSql);
         if (!insertRows) {
@@ -90,41 +103,9 @@ class Reservation extends Api.ApiModel {
         this.send(req, res, result);
     }
 
-    /** 獲取門診表 */
-    async #getClinicForm(clinicId, doctorId, startTime, endTime, token) {
-        const startDate = Common.formatTime(startTime).split('T')[0];
-        const endDate = Common.formatTime(endTime).split('T')[0];
-        let options = {
-            url: Common.apiDomain + '/clinic/getForm',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': token
-            },
-            body: JSON.stringify({
-                clinicId, doctorId, startDate,endDate
-            }),
-        };
-
-        return await new Promise((resolve, reject) => {
-            request.post(options, (error, response, body) => {
-                if (error || !body) {
-                    reject();
-                    return;
-                }
-
-                const result = Common.parseJson(body);
-                if (result['data']) {
-                    resolve(result['data'])
-                } else {
-                    resolve();
-                }
-            })
-        });
-    }
-
     /** 生成時間表 */
-    async #createTimeForm(form) {
-        const timeForm = {};
+    #createTimeForm(form) {
+        let timeForm = {};
         Object.keys(form).forEach((date) => {
             if (!timeForm.hasOwnProperty(date)) {
                 timeForm[date] = {};
@@ -140,15 +121,23 @@ class Reservation extends Api.ApiModel {
                         i = parseInt(time);
 
                         if (!timeForm[date].hasOwnProperty(time)) {
-                            timeForm[date][time] = {
-                                id: data['id'],
-                                name: data['name']
-                            }
+                            timeForm[date][time] = [];
                         }
+
+                        timeForm[date][time].push({
+                            id: data['id'],
+                            name: data['name']
+                        })
                     }
                 });
             })
         });
+
+        // 排序時間
+        timeForm = Object.keys(timeForm).sort().reduce((accumulator, key) => {
+            accumulator[key] = timeForm[key];
+            return accumulator;
+        }, {});
 
         return timeForm;
     }

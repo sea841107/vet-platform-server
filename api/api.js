@@ -1,6 +1,9 @@
 const md5 = require('md5');
 const jwt = require('jsonwebtoken')
+const request = require('request');
+
 const Status = require('../common/status');
+const Common = require('../common/common');
 const Logger = require('../logger/logger');
 
 /** jwt密鑰 */
@@ -105,6 +108,40 @@ class ApiModel {
         if (ignorePermission) {
             ignorePermissionList.push(url);
         }
+    }
+
+    /** 內部Api請求 */
+    async #internalRequest(url, token, body) {
+        let options = {
+            url: `${Common.apiDomain}/${url}`,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': token
+            },
+            body
+        };
+
+        return await new Promise((resolve, reject) => {
+            request.post(options, (error, response, body) => {
+                if (error || !body) {
+                    reject();
+                    return;
+                }
+
+                const result = Common.parseJson(body);
+                if (result['data']) {
+                    resolve(result['data'])
+                } else {
+                    resolve();
+                }
+            })
+        });
+    }
+
+    /** 獲取門診表 */
+    async getClinicForm(token, clinicId, doctorId, startDate, endDate) {
+        const body = JSON.stringify({clinicId, doctorId, startDate, endDate})
+        return await this.#internalRequest('clinic/getForm', token, body)
     }
 
     invalid() {
