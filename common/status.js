@@ -20,6 +20,7 @@ module.exports = {
     // Clinic
     Clinic_Search_Fail: { code: 3000, message: '診所搜尋失敗' },
     Clinic_GetForm_Fail: { code: 3001, message: '獲取門診表失敗' },
+    Clinic_AddFormTime_Fail: { code: 3002, message: '新增門診時間失敗' },
 
     // Doctor
     Doctor_List_Fail: { code: 4000, message: '獲取醫生列表失敗' },

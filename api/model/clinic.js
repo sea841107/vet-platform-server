@@ -10,6 +10,7 @@ class Clinic extends Api.ApiModel {
         super();
         this.registerApi(app, 'post', '/clinic/search', this.#search.bind(this));
         this.registerApi(app, 'post', '/clinic/getForm', this.#getForm.bind(this));
+        this.registerApi(app, 'post', '/clinic/addFormTime', this.#addFormTime.bind(this));
     }
 
     /** 診所搜尋 */
@@ -122,6 +123,26 @@ class Clinic extends Api.ApiModel {
         this.send(req, res, result);
     }
 
+    /** 新增門診時間 */
+    async #addFormTime(req, res) {
+        const status = this.#addFormTimeCheck(req);
+        if (status != Status.Success) {
+            return this.send(req, res, { status });
+        }
+
+        const sql = `INSERT INTO clinic_form (clinic_id, doctor_id, date, period, start_time, end_time)
+                    VALUES (${req.body.clinicId}, ${req.body.doctorId}, '${req.body.date}', '${req.body.period}', '${req.body.startTime}', '${req.body.endTime}')`;
+        const rows = await MySql.query(sql);
+        if (!rows) {
+            return this.send(req, res, { status: Status.Clinic_AddFormTime_Fail });
+        }
+
+        const result = {
+            status: Status.Success
+        }
+        this.send(req, res, result);
+    }
+
     #searchCheck(req) {
         return Status.Success;
     }
@@ -130,6 +151,19 @@ class Clinic extends Api.ApiModel {
         if (!req.body.hasOwnProperty('clinicId')
             || !req.body.hasOwnProperty('startDate')
             || !req.body.hasOwnProperty('endDate')) {
+            return Status.Parameter_Error;
+        }
+
+        return Status.Success;
+    }
+
+    #addFormTimeCheck(req) {
+        if (!req.body.hasOwnProperty('clinicId')
+            || !req.body.hasOwnProperty('doctorId')
+            || !req.body.hasOwnProperty('date')
+            || !req.body.hasOwnProperty('period')
+            || !req.body.hasOwnProperty('startTime')
+            || !req.body.hasOwnProperty('endTime')) {
             return Status.Parameter_Error;
         }
 
